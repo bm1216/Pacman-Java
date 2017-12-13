@@ -27,6 +27,7 @@ public class Board extends JPanel implements ActionListener {
   private Color mazeColor;
 
   private boolean inGame = false;
+  private boolean lost = false;
   private boolean dying = false;
 
   private final int BLOCK_SIZE = 24;
@@ -167,6 +168,22 @@ public class Board extends JPanel implements ActionListener {
     g2d.drawString(s, (SCREEN_SIZE - metr.stringWidth(s)) / 2, SCREEN_SIZE / 2);
   }
 
+  private void gameOver(Graphics2D g2d) {
+    g2d.setColor(new Color(0, 32, 48));
+    g2d.fillRect(50, SCREEN_SIZE/ 2 - 30, SCREEN_SIZE - 100, 50);
+    g2d.setColor(Color.white);
+    g2d.drawRect(50, SCREEN_SIZE/2 - 30, SCREEN_SIZE - 100, 50);
+
+    String s1 = "No lives left. Press s to restart.";
+    Font small = new Font("Helvetica", Font.BOLD, 14);
+    FontMetrics metr = this.getFontMetrics(small);
+
+    g2d.setColor(Color.white);
+    g2d.setFont(small);
+    g2d.drawString(s1, (SCREEN_SIZE - metr.stringWidth(s1)) / 2, SCREEN_SIZE / 2);
+    
+  }
+
   private void drawScore(Graphics2D g) {
     int i;
     String s;
@@ -219,6 +236,7 @@ public class Board extends JPanel implements ActionListener {
 
     if(pacsLeft == 0) {
       inGame = false;
+      lost = true;
     }
 
     continueLevel();
@@ -227,8 +245,8 @@ public class Board extends JPanel implements ActionListener {
   //The ghosts move one square and then decide if they want to change direction.
   private void moveGhosts(Graphics2D g2d) {
     short i;
-    int pos = 0;
-    int count = 0;
+    int pos;
+    int count;
 
     for(i = 0; i < N_GHOSTS; i++) {
 
@@ -241,7 +259,7 @@ public class Board extends JPanel implements ActionListener {
 
         count = 0;
 
-        /**
+        /*
          * If there is no obstacle on the left and the ghost is not already moving to the right,
          * the ghost will move to the left.
          * if the ghost enters a tunnel, he will continue in the same direction until he is
@@ -337,16 +355,19 @@ public class Board extends JPanel implements ActionListener {
         score++;
       }
 
+      //At the moment you press a button.
       if(req_dx != 0 || req_dy != 0) {
+        //If collides into a wall, do not execute the code within.
         if(!((req_dx == -1 && req_dy == 0 && (ch & 1) != 0)
             || (req_dx == 1 && req_dy == 0 && (ch & 4) != 0)
             || (req_dx == 0 && req_dy == -1 && (ch & 2) != 0)
             || (req_dx == 0 && req_dy == 1 && (ch & 8) != 0))) {
 
+
           pacmand_x = req_dx;
           pacmand_y = req_dy;
           view_dx = pacmand_x;
-          view_dx = pacmand_y;
+          view_dy = pacmand_y;
         }
       }
 
@@ -368,6 +389,7 @@ public class Board extends JPanel implements ActionListener {
   }
 
   private void drawPacman(Graphics2D g2d) {
+
     if (view_dx == -1) {
       drawPacmanLeft(g2d);
     } else if(view_dx == 1) {
@@ -380,7 +402,6 @@ public class Board extends JPanel implements ActionListener {
   }
 
   private void drawPacmanUp(Graphics2D graphics2D) {
-    System.out.println(pacmanAnimPos);
     switch (pacmanAnimPos) {
       case 1:
         graphics2D.drawImage(pacman2up, pacman_x  + 1, pacman_y + 1, this);
@@ -531,6 +552,12 @@ public class Board extends JPanel implements ActionListener {
 
       dx = -dx;
 
+      //Check that validSpeeds[random] doesnt give array access error.
+      //validSpeeds has max index 5.
+      if(currentSpeed > 5) {
+        currentSpeed = 5;
+      }
+
       random = (int) (Math.random() * (currentSpeed + 1));
 
       if(random > currentSpeed) {
@@ -587,6 +614,8 @@ public class Board extends JPanel implements ActionListener {
 
     if(inGame) {
       playGame(g2d);
+    } else if(lost){
+      gameOver(g2d);
     } else {
       showIntroScreen(g2d);
     }
